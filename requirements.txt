@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pdfplumber
+spacy
+python-multipart
+python-docx
+sentence-transformers
+gspread
+google-auth
+python-dotenv
+pymupdf
+pytesseract
+pillow
