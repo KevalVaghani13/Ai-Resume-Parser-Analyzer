@@ -3,8 +3,13 @@ import shutil
 import pdfplumber
 from docx import Document
 import spacy
+try:
+    nlp = spacy.load("en_core_web_sm")
+except Exception:
+    from spacy.cli import download
 
-nlp = spacy.load("en_core_web_sm")
+    download("en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
 
 SKILLS_DB = [
     # Languages

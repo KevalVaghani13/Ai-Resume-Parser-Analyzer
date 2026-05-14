@@ -9,7 +9,7 @@ import shutil
 
 app = FastAPI()
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "/tmp/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 STATIC_DIR = "static"
