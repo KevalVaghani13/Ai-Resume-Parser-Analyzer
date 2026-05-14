@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pdfplumber
+python-multipart
+python-docx
+gspread
+google-auth
+python-dotenv

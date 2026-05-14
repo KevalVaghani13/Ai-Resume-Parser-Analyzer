@@ -2,14 +2,25 @@ import re
 import shutil
 import pdfplumber
 from docx import Document
-import spacy
 try:
-    nlp = spacy.load("en_core_web_sm")
+    import spacy
 except Exception:
-    from spacy.cli import download
+    spacy = None
 
-    download("en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
+
+def _load_spacy_model():
+    if spacy is None:
+        return None
+
+    for model_name in ("en_core_web_sm",):
+        try:
+            return spacy.load(model_name)
+        except Exception:
+            continue
+    return None
+
+
+nlp = _load_spacy_model()
 
 SKILLS_DB = [
     # Languages
@@ -779,10 +790,11 @@ def extract_name(text):
 
     # 4. Fallback to PERSON entities from the header region.
     header_text = "\n".join(header_lines)
-    doc = nlp(header_text[:800])
-    for ent in doc.ents:
-        if ent.label_ == "PERSON" and len(ent.text.split()) >= 2:
-            return _prettify_name(ent.text)
+    if nlp is not None:
+        doc = nlp(header_text[:800])
+        for ent in doc.ents:
+            if ent.label_ == "PERSON" and len(ent.text.split()) >= 2:
+                return _prettify_name(ent.text)
 
     # 5. Final fallback: allow a short, clean header line.
     for line in header_lines[:8]:
@@ -869,10 +881,11 @@ def extract_location(text):
         return _normalize_line(best_candidate).rstrip(' ,.-')
 
     # NER fallback for layouts that do not expose commas cleanly.
-    header_doc = nlp("\n".join(lines[:12]))
-    gpe_parts = [ent.text for ent in header_doc.ents if ent.label_ in {"GPE", "LOC", "FAC"} and len(ent.text) <= 60]
-    if gpe_parts:
-        return ", ".join(dict.fromkeys(gpe_parts[:3])).rstrip(' ,.-')
+    if nlp is not None:
+        header_doc = nlp("\n".join(lines[:12]))
+        gpe_parts = [ent.text for ent in header_doc.ents if ent.label_ in {"GPE", "LOC", "FAC"} and len(ent.text) <= 60]
+        if gpe_parts:
+            return ", ".join(dict.fromkeys(gpe_parts[:3])).rstrip(' ,.-')
 
     return None
 

@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List
+import base64
 
 from dotenv import load_dotenv
 
@@ -35,25 +36,55 @@ WORKSHEET_HEADERS = [
 
 
 def _sheet_settings():
-    service_account_file = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE", DEFAULT_SERVICE_ACCOUNT_FILE)
+    service_account_file = (
+        os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE")
+        or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+        or DEFAULT_SERVICE_ACCOUNT_FILE
+    )
     sheet_id = os.environ.get("GOOGLE_SHEET_ID")
     return service_account_file, sheet_id
 
 
-def _ensure_client():
-    service_account_file, sheet_id = _sheet_settings()
-    if not sheet_id:
-        raise RuntimeError("Environment variable GOOGLE_SHEET_ID is required.")
-    if not os.path.exists(service_account_file):
-        raise RuntimeError(f"Service account file not found: {service_account_file}")
-
+def _service_account_credentials():
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive",
     ]
-    creds = Credentials.from_service_account_file(service_account_file, scopes=scopes)
+
+    service_account_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
+    if service_account_json:
+        return Credentials.from_service_account_info(json.loads(service_account_json), scopes=scopes)
+
+    service_account_json_base64 = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON_BASE64")
+    if service_account_json_base64:
+        decoded_json = base64.b64decode(service_account_json_base64).decode("utf-8")
+        return Credentials.from_service_account_info(json.loads(decoded_json), scopes=scopes)
+
+    service_account_file, _ = _sheet_settings()
+    if not os.path.exists(service_account_file):
+        raise RuntimeError(f"Service account file not found: {service_account_file}")
+
+    return Credentials.from_service_account_file(service_account_file, scopes=scopes)
+
+
+def _ensure_client():
+    _, sheet_id = _sheet_settings()
+    if not sheet_id:
+        raise RuntimeError("Environment variable GOOGLE_SHEET_ID is required.")
+
+    creds = _service_account_credentials()
     client = gspread.authorize(creds)
     return client.open_by_key(sheet_id)
+
+
+def _sheet_available() -> bool:
+    _, sheet_id = _sheet_settings()
+    has_json_credentials = bool(
+        os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
+        or os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON_BASE64")
+    )
+    service_account_file, _ = _sheet_settings()
+    return bool(sheet_id and (has_json_credentials or os.path.exists(service_account_file)))
 
 
 def _get_or_create_ws(sheet):
@@ -152,8 +183,6 @@ def save_analysis_row(
     ws = _get_or_create_ws(sheet)
     row_id = _next_id(ws)
     created_at = datetime.now(timezone.utc).isoformat()
-
-    # Format questions one per line for better readability
     questions_formatted = "\n".join(suggested_questions or [])
     
     ws.append_row(
@@ -179,6 +208,9 @@ def save_analysis_row(
 
 
 def get_recent_matches(limit: int = 50):
+    if not _sheet_available():
+        return []
+
     sheet = _ensure_client()
     ws = _get_or_create_ws(sheet)
     rows = ws.get_all_records()
@@ -211,6 +243,9 @@ def get_recent_matches(limit: int = 50):
 
 
 def clear_history():
+    if not _sheet_available():
+        return {"cleared": False, "message": "Google Sheets persistence is not configured."}
+
     sheet = _ensure_client()
     try:
         ws = sheet.worksheet(WORKSHEET_TITLE)
