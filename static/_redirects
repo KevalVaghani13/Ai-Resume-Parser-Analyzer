@@ -1,0 +1,7 @@
+/analyze/*    https://<YOUR_BACKEND_DOMAIN>/:splat    200
+/analyze-batch/*    https://<YOUR_BACKEND_DOMAIN>/:splat    200
+/matches/*    https://<YOUR_BACKEND_DOMAIN>/:splat    200
+/matches    https://<YOUR_BACKEND_DOMAIN>/:splat    200
+/matches/clear    https://<YOUR_BACKEND_DOMAIN>/:splat    200
+
+# Replace <YOUR_BACKEND_DOMAIN> with the URL where your FastAPI backend is hosted (e.g. https://my-backend.onrender.com)

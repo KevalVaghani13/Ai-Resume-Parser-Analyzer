@@ -99,6 +99,34 @@ GOOGLE_SERVICE_ACCOUNT_JSON_BASE64=...
 
 The app writes all analysis data into one worksheet named `analysis` with one row per resume/job analysis.
 
+## Deploying Frontend to Netlify and Backend to a Python Host
+
+Netlify is a great place to host the static dashboard; it doesn't natively run Python backends. A common pattern is:
+
+- Host the static site on Netlify (publish directory: `static`).
+- Host the FastAPI backend on a Python-friendly host (Render, Railway, Fly, or a VM).
+- Configure Netlify redirects or proxy so frontend API calls (e.g. `/analyze/`) are forwarded to the backend.
+
+Quick steps:
+
+1. Pick a backend host (Render recommended for quick deploy):
+  - Create an account and connect your GitHub repo.
+  - Create a new Web Service using the `main` branch.
+  - Set the start command to: `uvicorn main:app --host 0.0.0.0 --port $PORT`.
+  - Add environment variables: `GOOGLE_SHEET_ID` and either `GOOGLE_SERVICE_ACCOUNT_FILE` (upload) or `GOOGLE_SERVICE_ACCOUNT_JSON` (raw JSON).
+  - Deploy. Note the published domain (e.g. `https://my-backend.onrender.com`).
+
+2. Configure the frontend on Netlify:
+  - Create a new site and connect the same GitHub repo (or drag the `static/` folder to Netlify deploy UI).
+  - Set `Publish directory` to `static` and no build command (unless you add a build step).
+  - Add a file `static/_redirects` with rules to proxy API paths to your backend (a template is included in the repo). Replace `<YOUR_BACKEND_DOMAIN>` with your backend URL.
+
+3. CORS: Ensure the backend allows requests from the Netlify site. This repo now enables permissive CORS in `main.py`. For production, restrict `allow_origins` to your Netlify domain.
+
+4. Secrets: Never commit `.env` or `service_account.json`. Use your host's environment variable settings to supply secrets.
+
+That setup keeps the static UI fast on Netlify while the Python API runs on a proper Python host.
+
 ### What gets committed to GitHub
 - Application code, UI files, and docs are committed normally.
 - `.env` stays local and is never uploaded.
