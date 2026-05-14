@@ -32,6 +32,21 @@ uvicorn main:app --reload
 
 For Vercel deployment, install the lighter set with `pip install -r requirements-vercel.txt`.
 
+**One-step setup (recommended for new users)**
+
+Windows (PowerShell):
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\setup.ps1
+```
+
+Linux / macOS:
+```bash
+bash setup.sh
+```
+
+These scripts will create a `.venv` virtual environment, install all Python packages from `requirements.txt`, and attempt to download the spaCy model if spaCy is installed.
+
 If you need to extract text from image-based PDFs, also install the Tesseract OCR engine on Windows and keep the `tesseract` binary on your PATH. The app will fall back to OCR automatically when a PDF page has little or no selectable text.
 
 Windows install (recommended):
