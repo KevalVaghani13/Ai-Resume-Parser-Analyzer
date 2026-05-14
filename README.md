@@ -12,9 +12,7 @@ This project screens resumes against a job description and returns:
 - gspread + Google service account for persistence
 - Optional local extras: spaCy, sentence-transformers, OCR libraries
 
-For Vercel, keep the deployment install light by using `requirements-vercel.txt`. The optional extras are only needed if you want local OCR or semantic scoring.
-
-If you want the app to behave as fully as your local setup, install `requirements.txt` on your own machine. Use `requirements-vercel.txt` for Vercel deployment.
+The optional extras are only needed if you want local OCR or semantic scoring. Install `requirements.txt` on your machine to get the full feature set.
 
 ## API Endpoints
 - `POST /analyze/` : Analyze one resume
@@ -30,7 +28,7 @@ python -m spacy download en_core_web_sm
 uvicorn main:app --reload
 ```
 
-For Vercel deployment, install the lighter set with `pip install -r requirements-vercel.txt`.
+For server or local deployment, install dependencies with `pip install -r requirements.txt`.
 
 **One-step setup (recommended for new users)**
 
@@ -91,7 +89,7 @@ GOOGLE_SERVICE_ACCOUNT_FILE=C:\Users\ADMIN\Desktop\resume builder\service_accoun
 
 Then share the Google Sheet with the service account email from that JSON file.
 
-For Vercel or other serverless deployments, you can also set the service account as an environment variable instead of a file:
+For serverless deployments, you can also set the service account as an environment variable instead of a file:
 
 ```env
 GOOGLE_SERVICE_ACCOUNT_JSON={...raw JSON...}
